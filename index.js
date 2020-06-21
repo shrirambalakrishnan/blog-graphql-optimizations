@@ -41,7 +41,7 @@ const resolvers = {
             name: user.name,
             email: user.email,
             posts: userPosts.map ( post => {
-              return { title: post.tite, description: post.description }
+              return { title: post.title, description: post.description }
             })
           }
         })
