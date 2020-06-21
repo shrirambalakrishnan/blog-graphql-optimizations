@@ -1,0 +1,10 @@
+{
+  "development": {
+    "username": "your_user_name",
+    "password": "your_password",
+    "database": "blogGraphqlOptimizations",
+    "host": "127.0.0.1",
+    "dialect": "mysql",
+    "operatorsAliases": false
+  }
+}
