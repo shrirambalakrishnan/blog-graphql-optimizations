@@ -23,30 +23,15 @@ const typeDefs = gql`
 
 // A map of functions which return data for the schema.
 const resolvers = {
-
+  UserType: {
+    posts: async (parent) => {
+      return await Post.findAll({where: {userId: parent.id}});
+    }
+  },
   Query: {
     users: async () => {
       try {
-        console.log(User)
-
-        let users = await User.findAll()
-        let userIds = users.map( user => user.id)
-        let posts = await Post.findAll({where: {userId: userIds}});
-
-        let usersData = users.map( user => {
-          let userPosts = posts.filter( post => post.userId == user.id);
-
-          return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            posts: userPosts.map ( post => {
-              return { title: post.title, description: post.description }
-            })
-          }
-        })
-
-        return usersData
+        return await User.findAll()
       } catch (e) {
         console.log(e)
       }
