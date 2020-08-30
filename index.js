@@ -5,7 +5,14 @@ const DataLoader = require('dataloader');
 
 // The GraphQL schema
 const typeDefs = gql`
+  input PostInputType {
+    id: Int!
+    title: String!
+    description: String
+  }
+
   type PostType {
+    id: Int!
     title: String
     description: String
   }
@@ -19,6 +26,10 @@ const typeDefs = gql`
 
   type Query {
     users: [UserType]
+  }
+
+  type Mutation {
+    updatePost(data: PostInputType): PostType
   }
 `;
 
@@ -48,6 +59,24 @@ const resolvers = {
       }
     },
   },
+  Mutation: {
+    updatePost: async (parent, args, ctx) => {
+      let { id, title, description } = args.data;
+
+      try{
+        let post = await Post.findOne( { where: { id: id }} )
+
+        post.title = title
+        post.description = description
+        post.save()
+
+        return post;
+      } catch (e) {
+        console.log(e);
+        throw e;
+      }
+    }
+  }
 };
 
 const server = new ApolloServer({
