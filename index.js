@@ -1,6 +1,7 @@
 const { ApolloServer, gql } = require('apollo-server');
 
 const {User, Post} = require("./models");
+const DataLoader = require('dataloader');
 
 // The GraphQL schema
 const typeDefs = gql`
@@ -21,11 +22,21 @@ const typeDefs = gql`
   }
 `;
 
+const postsLoader = new DataLoader( async (userIds) => {
+  let posts = await Post.findAll( { where: { userId: userIds } } );
+
+  let postsGroupedByUser = userIds.map ( userId => {
+    return posts.filter( post => post.userId == userId );
+  });
+
+  return postsGroupedByUser;
+})
+
 // A map of functions which return data for the schema.
 const resolvers = {
   UserType: {
-    posts: async (parent) => {
-      return await Post.findAll({where: {userId: parent.id}});
+    posts: (parent, _, ctx) => {
+      return ctx.postsLoader.load(parent.id);
     }
   },
   Query: {
@@ -42,6 +53,11 @@ const resolvers = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  context: async ({req}) => {
+    return {
+      postsLoader: postsLoader
+    }
+  }
 });
 
 server.listen().then(({ url }) => {
