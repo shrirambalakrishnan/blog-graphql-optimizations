@@ -8,7 +8,7 @@ const { AuthDirective } = require("./src/directives/auth")
 const typeDefs = gql`
   directive @auth(
     requires: Role = ADMIN
-  ) on FIELD_DEFINITION
+  ) on FIELD_DEFINITION | OBJECT
 
   enum Role {
     ADMIN
@@ -23,7 +23,7 @@ const typeDefs = gql`
     description: String
   }
 
-  type CommentType {
+  type CommentType @auth(requires: USER) {
     id: Int!
     comment: String!
   }
@@ -32,7 +32,7 @@ const typeDefs = gql`
     id: Int!
     title: String
     description: String
-    comments: [CommentType] @auth(requires: USER)
+    comments: [CommentType]
   }
 
   type UserType {
