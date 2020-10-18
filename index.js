@@ -1,7 +1,9 @@
-const { ApolloServer, gql } = require('apollo-server');
+const { ApolloServer, gql, makeExecutableSchema } = require('apollo-server');
+const { applyMiddleware } = require('graphql-middleware');
 
 const {User, Post} = require("./models");
 const { postsLoader, commentsLoader } = require("./src/dataloaders")
+const { permissions } = require("./src/middlewares/permissions")
 
 // The GraphQL schema
 const typeDefs = gql`
@@ -91,12 +93,19 @@ const resolvers = {
 };
 
 const server = new ApolloServer({
-  typeDefs,
-  resolvers,
+  schema: applyMiddleware(
+    makeExecutableSchema({typeDefs, resolvers}),
+    permissions
+  ),
   context: async ({req}) => {
     return {
       postsLoader: postsLoader,
       commentsLoader: commentsLoader,
+      user: {
+        id: 100,
+        email: "user@gmail.com",
+        roles: ["USER"]
+      }
     }
   }
 });
