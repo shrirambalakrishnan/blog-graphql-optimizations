@@ -1,7 +1,7 @@
 const { ApolloServer, gql } = require('apollo-server');
 
 const {User, Post} = require("./models");
-const DataLoader = require('dataloader');
+const { postsLoader, commentsLoader } = require("./src/dataloaders")
 
 // The GraphQL schema
 const typeDefs = gql`
@@ -11,10 +11,16 @@ const typeDefs = gql`
     description: String
   }
 
+  type CommentType {
+    id: Int!
+    comment: String!
+  }
+
   type PostType {
     id: Int!
     title: String
     description: String
+    comments: [CommentType]
   }
 
   type UserType {
@@ -26,6 +32,7 @@ const typeDefs = gql`
 
   type Query {
     users: [UserType]
+    posts: [PostType]
   }
 
   type Mutation {
@@ -33,18 +40,15 @@ const typeDefs = gql`
   }
 `;
 
-const postsLoader = new DataLoader( async (userIds) => {
-  let posts = await Post.findAll( { where: { userId: userIds } } );
 
-  let postsGroupedByUser = userIds.map ( userId => {
-    return posts.filter( post => post.userId == userId );
-  });
-
-  return postsGroupedByUser;
-})
 
 // A map of functions which return data for the schema.
 const resolvers = {
+  PostType: {
+    comments: (parent, _, ctx) => {
+      return ctx.commentsLoader.load(parent.id);
+    }
+  },
   UserType: {
     posts: (parent, _, ctx) => {
       return ctx.postsLoader.load(parent.id);
@@ -58,6 +62,13 @@ const resolvers = {
         console.log(e)
       }
     },
+    posts: async () => {
+      try {
+        return await Post.findAll()
+      } catch (e) {
+        console.log(e)
+      }
+    }
   },
   Mutation: {
     updatePost: async (parent, args, ctx) => {
@@ -84,7 +95,8 @@ const server = new ApolloServer({
   resolvers,
   context: async ({req}) => {
     return {
-      postsLoader: postsLoader
+      postsLoader: postsLoader,
+      commentsLoader: commentsLoader,
     }
   }
 });
