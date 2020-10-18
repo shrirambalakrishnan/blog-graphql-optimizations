@@ -1,10 +1,22 @@
 const { ApolloServer, gql } = require('apollo-server');
 
-const {User, Post} = require("./models");
+const { User, Post } = require("./models");
 const { postsLoader, commentsLoader } = require("./src/dataloaders")
+const { AuthDirective } = require("./src/directives/auth")
 
 // The GraphQL schema
 const typeDefs = gql`
+  directive @auth(
+    requires: Role = ADMIN
+  ) on FIELD_DEFINITION
+
+  enum Role {
+    ADMIN
+    REVIEWER
+    USER
+    UNKNOWN
+  }
+
   input PostInputType {
     id: Int!
     title: String!
@@ -20,7 +32,7 @@ const typeDefs = gql`
     id: Int!
     title: String
     description: String
-    comments: [CommentType]
+    comments: [CommentType] @auth(requires: USER)
   }
 
   type UserType {
@@ -93,10 +105,18 @@ const resolvers = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  schemaDirectives: {
+    auth: AuthDirective
+  },
   context: async ({req}) => {
     return {
       postsLoader: postsLoader,
       commentsLoader: commentsLoader,
+      user: {
+        id: 100,
+        email: "admin@admin.com",
+        roles: ["USER"]
+      }
     }
   }
 });
